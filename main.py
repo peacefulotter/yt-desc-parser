@@ -105,41 +105,50 @@ def get_urls(s: str):
     return [(url, get_url_type(url)) for url in urls if url.startswith("http")]
 
 
+def handle_search_result(videos, links, item):
+    snippet = item["snippet"]
+    title = snippet["title"]
+    published = snippet["publishedAt"]
+    kind = item["id"]["kind"].split("#")[-1]
+    id = item["id"][
+        {"video": "videoId", "channel": "channelId", "playlist": "playlistId"}[kind]
+    ]
+
+    if kind == "video":
+        videos.loc[len(videos)] = [title, published, id]
+
+        desc = get_description(id)
+        emails = get_emails(desc)
+        urls = get_urls(desc)
+
+        for email, valid in emails:
+            links.loc[len(links)] = [title, id, email, LinkType.EMAIL.value, valid]
+
+        for url, link_type in urls:
+            links.loc[len(links)] = [title, id, url, link_type, True]
+
+    elif kind == "channel":
+        pass
+
+    elif kind == "playlist":
+        pass
+
+
 @with_youtube
 def youtube_search(q, max_results, yt=None):
 
-    res = yt.search().list(q=q, part="id,snippet", maxResults=max_results).execute()
+    search_max_results = min(max_results, 50)
+    request = yt.search().list(q=q, part="id,snippet", maxResults=search_max_results)
 
     videos = pd.DataFrame(columns=["title", "published", "id"])
     links = pd.DataFrame(columns=["title", "id", "link", "type", "valid"])
 
-    for search_result in tqdm(res.get("items", [])):
-        snippet = search_result["snippet"]
-        title = snippet["title"]
-        published = snippet["publishedAt"]
-        kind = search_result["id"]["kind"].split("#")[-1]
-        id = search_result["id"][
-            {"video": "videoId", "channel": "channelId", "playlist": "playlistId"}[kind]
-        ]
-
-        if kind == "video":
-            videos.loc[len(videos)] = [title, published, id]
-
-            desc = get_description(id)
-            emails = get_emails(desc)
-            urls = get_urls(desc)
-
-            for email, valid in emails:
-                links.loc[len(links)] = [title, id, email, LinkType.EMAIL.value, valid]
-
-            for url, link_type in urls:
-                links.loc[len(links)] = [title, id, url, link_type, True]
-
-        elif kind == "channel":
-            pass
-
-        elif kind == "playlist":
-            pass
+    remaining = max_results
+    while remaining > 0:
+        res = request.execute()
+        for item in tqdm(res.get("items", [])):
+            handle_search_result(videos, links, item)
+        remaining -= search_max_results
 
     return videos, links
 
@@ -178,6 +187,6 @@ if __name__ == "__main__":
         default="email",
         choices=["email", "insta", "other", "all"],
     )
-    parser.add_argument("--max", help="Max results", default=25)
+    parser.add_argument("--max", help="Max results", default=25, type=int)
     args = parser.parse_args()
     main(args)

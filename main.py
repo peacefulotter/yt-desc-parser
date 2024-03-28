@@ -106,7 +106,7 @@ def get_urls(s: str):
 
 
 @with_youtube
-def youtube_search(q, max_results=5, yt=None):
+def youtube_search(q, max_results, yt=None):
 
     res = yt.search().list(q=q, part="id,snippet", maxResults=max_results).execute()
 
@@ -146,7 +146,8 @@ def youtube_search(q, max_results=5, yt=None):
 
 def main(config):
     query = config.q
-    videos, links = youtube_search(query)
+    max_results = config.max
+    videos, links = youtube_search(query, max_results)
 
     out_dir = Path(".") / "out"
     out_dir.mkdir(exist_ok=True)

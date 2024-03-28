@@ -8,6 +8,14 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+### Linux
+
+```
+python -m venv venv
+source ./venv/bin/activate
+pip install -r requirements.txt
+```
+
 # Usage
 
 3 arguments, all optional:

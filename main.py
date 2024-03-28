@@ -11,7 +11,8 @@ from urlextract import URLExtract
 
 from googleapiclient.discovery import build
 
-DEVELOPER_KEY = "AIzaSyBqyzdb7oagxtoIQz08FimfidlbIi9awn0"
+with open("api_key.txt") as f:
+    DEVELOPER_KEY = f.read().strip()
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 

@@ -176,7 +176,7 @@ def main(config):
     table = pd.merge(videos, l, on="id")
 
     print(table)
-    print("\n".join(table["link"]))
+    print("\n".join(list(set(table["link"]))))
 
 
 if __name__ == "__main__":

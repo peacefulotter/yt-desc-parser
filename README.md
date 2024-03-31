@@ -11,7 +11,7 @@
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
-# Paste api key in api_key.txt
+# Paste api key to the api_key.txt file
 echo "MY_API_KEY" > api_key.txt
 ```
 
@@ -21,7 +21,7 @@ echo "MY_API_KEY" > api_key.txt
 python -m venv venv
 source ./venv/bin/activate
 pip install -r requirements.txt
-# Paste api key in api_key.txt
+# Paste api key to the api_key.txt file
 echo "MY_API_KEY" > api_key.txt
 ```
 

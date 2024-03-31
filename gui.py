@@ -1,5 +1,6 @@
 import re
 import tkinter as tk
+from tkinter import ttk
 
 from main import main
 from utils import Record
@@ -26,12 +27,18 @@ frame_style = {
 }
 
 
+APP_WIDTH = 2000
+APP_HEIGHT = 900
+
+
 class App(tk.Tk):
 
     def __init__(self, *args, **kwargs):
 
         tk.Tk.__init__(self, *args, **kwargs)
-        main = tk.Frame(self, bg="#ffffff", height=700, width=1400, padx=20, pady=20)
+        main = tk.Frame(
+            self, bg="#ffffff", height=APP_HEIGHT, width=APP_WIDTH, padx=20, pady=20
+        )
         main.pack(fill="both", expand="true")
         main.grid_columnconfigure(0, weight=1)
         main.grid_columnconfigure(1, weight=2)
@@ -50,22 +57,16 @@ class App(tk.Tk):
         self.create_search(main)
         self.create_output(main)
 
-        self.resizable(0, 0)
-        self.geometry("1024x600")
+        self.geometry(f"{APP_WIDTH}x{APP_HEIGHT}")
         tk.Tk.config(self)
 
     def trigger_search(self):
-        print("Searching...")
-
-        q = self.config["query"].get()
-        q = re.sub("[\s+]", "", q)
-        q = q.split(",")
-
-        print(q)
-        print(self.config)
+        queries = self.config["query"].get()
+        queries = re.sub("[\s+]", "", queries)
+        queries = queries.split(",")
 
         config = Record(
-            q=q,
+            queries=queries,
             type=[
                 list(LinkType)[i].value
                 for i, var in enumerate(self.config["type"])
@@ -75,7 +76,9 @@ class App(tk.Tk):
             published_mode=self.config["published_mode"].get(),
             published_custom=[var.get() for var in self.config["published_custom"]],
         )
-        main(config)
+
+        self.clear_table()
+        main(config, cb=self.insert_table)
 
     def attach_color_cb(self, elt, var, active_val):
         def wrapper(elt, var):
@@ -233,37 +236,39 @@ class App(tk.Tk):
         output_frame = tk.LabelFrame(main, frame_style, text="Output")
         output_frame.grid(row=0, column=1, sticky=tk.NSEW)
 
-        """output_frame = tk.LabelFrame(self, frame_styles, text="Output")
-        output_frame.place(rely=0.05, relx=0.45, height=500, width=500)
+        self.table = ttk.Treeview(output_frame)
+        columns = ["#", "Channel", "Title", "Published", "Link", "Type"]
+        self.table["columns"] = columns
+        self.table["show"] = "headings"  # removes empty column
+        self.table.column("#", width=50, stretch=tk.NO)
 
-        # This is a treeview.
-        tv1 = ttk.Treeview(output_frame)
-        column_list_account = ["Name", "Type", "Base Stat Total"]
-        tv1["columns"] = column_list_account
-        tv1["show"] = "headings"  # removes empty column
-        for column in column_list_account:
-            tv1.heading(column, text=column)
-            tv1.column(column, width=50)
-        tv1.place(relheight=1, relwidth=0.995)
+        for column in columns:
+            self.table.heading(column, text=column)
+            self.table.column(column, width=50)
+        self.table.place(relheight=1, relwidth=0.995)
+
         treescroll = tk.Scrollbar(output_frame)
-        treescroll.configure(command=tv1.yview)
-        tv1.configure(yscrollcommand=treescroll.set)
+        treescroll.configure(command=self.table.yview)
+        self.table.configure(yscrollcommand=treescroll.set)
         treescroll.pack(side="right", fill="y")
 
-        def Load_data():
-            for row in [
-                ["Bulbasaur", "Grass", 318],
-                ["Ivysaur", "Grass", 405],
-                ["Venusaur", "Grass", 525],
-            ]:
-                tv1.insert("", "end", values=row)
+    def insert_table(self, df):
+        for i, row in df.iterrows():
+            self.table.insert(
+                "",
+                "end",
+                values=[
+                    i,
+                    row["channel"],
+                    row["title"],
+                    row["published"],
+                    row["link"],
+                    row["type"],
+                ],
+            )
 
-        def Refresh_data():
-            # Deletes the data in the current treeview and reinserts it.
-            tv1.delete(*tv1.get_children())  # *=splat operator
-            Load_data()
-
-        Load_data()"""
+    def clear_table(self):
+        self.table.delete(*self.table.get_children())
 
 
 if __name__ == "__main__":

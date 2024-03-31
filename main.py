@@ -1,5 +1,3 @@
-from enum import Enum
-
 import re
 import argparse
 import pandas as pd
@@ -8,8 +6,12 @@ from pathlib import Path
 from pytube import YouTube
 from datetime import datetime
 from urlextract import URLExtract
+from datetime import datetime, timedelta
 
 from googleapiclient.discovery import build
+
+from enums import LinkType, PublishedOptions, PublishedCustomOptions
+
 
 with open("api_key.txt") as f:
     DEVELOPER_KEY = f.read().strip()
@@ -91,12 +93,6 @@ https://stackoverflow.com/questions/9760588/how-do-you-extract-a-url-from-a-stri
 extractor = URLExtract()
 
 
-class LinkType(Enum):
-    EMAIL = "email"
-    INSTA = "insta"
-    OTHER = "other"
-
-
 def get_url_type(url: str):
     return LinkType.INSTA.value if "instagram" in url else LinkType.OTHER.value
 
@@ -136,10 +132,16 @@ def handle_search_result(videos, links, item):
 
 
 @with_youtube
-def youtube_search(q, max_results, yt=None):
+def youtube_search(q, max_results, published_after, yt=None):
 
     search_max_results = min(max_results, 50)
-    request = yt.search().list(q=q, part="id,snippet", maxResults=search_max_results)
+    request = yt.search().list(
+        q=q,
+        part="id,snippet",
+        type="video",
+        maxResults=search_max_results,
+        publishedAfter=published_after,
+    )
 
     videos = pd.DataFrame(columns=["title", "published", "id"])
     links = pd.DataFrame(columns=["title", "id", "link", "type", "valid"])
@@ -154,10 +156,30 @@ def youtube_search(q, max_results, yt=None):
     return videos, links
 
 
+def get_published_time(config):
+    mode = config.published_mode
+    weeks, days, hours = 0, 0, 0
+
+    match mode:
+        case PublishedOptions.LAST_MONTH.value:
+            weeks, days, hours = 4, 0, 0
+        case PublishedOptions.LAST_WEEK.value:
+            weeks, days, hours = 1, 0, 0
+        case PublishedOptions.LAST_DAY.value:
+            weeks, days, hours = 0, 1, 0
+        case PublishedOptions.CUSTOM.value:
+            weeks, days, hours = config.published_custom
+
+    print(weeks, days, hours)
+
+    return (datetime.now() - timedelta(days=days, hours=hours, weeks=weeks)).isoformat()
+
+
 def main(config):
     query = config.q
     max_results = config.max
-    videos, links = youtube_search(query, max_results)
+    published_after = get_published_time(config)
+    videos, links = youtube_search(query, max_results, published_after)
 
     out_dir = Path(".") / "out"
     out_dir.mkdir(exist_ok=True)
@@ -189,5 +211,26 @@ if __name__ == "__main__":
         choices=["email", "insta", "other", "all"],
     )
     parser.add_argument("--max", help="Max results", default=25, type=int)
+    parser.add_argument(
+        "--month",
+        help="Look for videos of at most a month old",
+        default=False,
+        type=bool,
+    )
+    parser.add_argument(
+        "--week", help="Look for videos of at most a week old", default=False, type=bool
+    )
+    parser.add_argument(
+        "--day", help="Look for videos of at most a day old", default=False, type=bool
+    )
+    parser.add_argument(
+        "--weeks", help="Look for videos of at most # weeks old", default=1, type=int
+    )
+    parser.add_argument(
+        "--days", help="Look for videos of at most # days old", default=0, type=int
+    )
+    parser.add_argument(
+        "--hours", help="Look for videos of at most # days old", default=0, type=int
+    )
     args = parser.parse_args()
     main(args)

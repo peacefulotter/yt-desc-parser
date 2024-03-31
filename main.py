@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from googleapiclient.discovery import build
 
 from utils import Record
+from sheet import save_to_spreadsheet
 from enums import LinkType, PublishedOptions
 
 
@@ -105,9 +106,15 @@ def get_urls(s: str, url_types):
     for url in urls:
         if "http" not in url:
             continue
+
         url_type = get_url_type(url)
+
+        if url_type == LinkType.INSTA.value:
+            url = url[len("https://www.instagram.com/") :]
+
         if url_type in url_types:
             res.append((url, url_type))
+
     return res
 
 
@@ -228,6 +235,9 @@ def main(config, cb=None):
 
         print(table)
         print("\n".join(list(set(table["link"]))))
+
+        spreadsheet = table[["channel", "link", "type"]]
+        save_to_spreadsheet(spreadsheet)
 
         if cb:
             cb(table)

@@ -2,8 +2,9 @@
 
 ## Prerequisites
 
--   Python 3.X
+-   Python >= 3.10
 -   A Google API Key, see: https://console.cloud.google.com
+-   Follow tutorial on how to create a JSON credentials file: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account
 
 ### Windows
 

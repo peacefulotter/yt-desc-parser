@@ -14,6 +14,8 @@ google-auth==2.29.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
+gspread==6.1.0
+gspread-dataframe==3.3.1
 httplib2==0.22.0
 idna==3.6
 importlib_metadata==7.1.0
@@ -51,6 +53,7 @@ requests-oauthlib==2.0.0
 rsa==4.9
 six==1.16.0
 stack-data==0.6.3
+StrEnum==0.4.15
 tornado==6.4
 tqdm==4.66.2
 traitlets==5.14.2
